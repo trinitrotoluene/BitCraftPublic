@@ -11,10 +11,11 @@ use crate::messages::action_request::{
 };
 use crate::messages::components::NotificationSeverity;
 use crate::messages::empire_shared::EmpireResupplyNodeRequest;
+use crate::messages::game_util::ItemType;
 use crate::messages::static_data::EnemyType;
 use crate::messages::util::{OffsetCoordinatesFloat, SmallHexTileMessage};
 use bitcraft_macro::event_table;
-use spacetimedb::{Identity, SpacetimeType};
+use spacetimedb::{Identity, SpacetimeType, Timestamp};
 
 /// Ephemeral notifications for effects that must be visible to connections other
 /// than the reducer caller in SpacetimeDB 2.x.
@@ -283,6 +284,31 @@ pub struct DeployableDisembarkEvent {
 pub struct DeployableMountEvent {
     pub actor_id: u64,
     pub deployable_entity_id: u64,
+}
+
+#[derive(SpacetimeType, Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(i32)]
+pub enum MarketOrderType {
+    BuyOrder = 0,
+    SellOrder,
+}
+
+#[spacetimedb::table(accessor = market_trade_event, public, event)]
+pub struct MarketTradeEvent {
+    pub claim_entity_id: u64,
+    /// The existing buy_order_state / sell_order_state row that was filled
+    pub listing_entity_id: u64,
+    /// SellOrder: a player bought from the listing. BuyOrder: a player sold into the listing.
+    pub listing_type: MarketOrderType,
+    pub buyer_entity_id: u64,
+    pub seller_entity_id: u64,
+    pub item_id: i32,
+    pub item_type: ItemType,
+    pub quantity: i32,
+    pub unit_price: i32,
+    pub total_coins: i32,
+    pub listing_remaining_quantity: i32,
+    pub timestamp: Timestamp,
 }
 
 #[event_table(name = player_notification_event)]
