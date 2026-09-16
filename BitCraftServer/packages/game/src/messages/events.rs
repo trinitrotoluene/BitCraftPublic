@@ -11,10 +11,11 @@ use crate::messages::action_request::{
 };
 use crate::messages::components::NotificationSeverity;
 use crate::messages::empire_shared::EmpireResupplyNodeRequest;
+use crate::messages::game_util::ItemStack;
 use crate::messages::static_data::EnemyType;
 use crate::messages::util::{OffsetCoordinatesFloat, SmallHexTileMessage};
 use bitcraft_macro::event_table;
-use spacetimedb::{Identity, SpacetimeType};
+use spacetimedb::{Identity, SpacetimeType, Timestamp};
 
 /// Ephemeral notifications for effects that must be visible to connections other
 /// than the reducer caller in SpacetimeDB 2.x.
@@ -283,6 +284,32 @@ pub struct DeployableDisembarkEvent {
 pub struct DeployableMountEvent {
     pub actor_id: u64,
     pub deployable_entity_id: u64,
+}
+
+#[derive(SpacetimeType, Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(i32)]
+pub enum BarterStallInventoryChangeReason {
+    Sale = 0,
+}
+
+#[spacetimedb::table(accessor = barter_stall_inventory_event, public, event)]
+pub struct BarterStallInventoryEvent {
+    pub shop_entity_id: u64,
+    pub claim_entity_id: u64,
+    /// The player who accepted the trade order
+    pub actor_entity_id: u64,
+    pub reason: BarterStallInventoryChangeReason,
+    /// The accepted trade_order_state row
+    pub trade_order_entity_id: Option<u64>,
+    /// How many times the trade order was accepted
+    pub trade_amount: Option<i32>,
+    pub added_items: Vec<ItemStack>,
+    pub removed_items: Vec<ItemStack>,
+    /// Coins paid into the claim treasury instead of the stall inventory
+    pub treasury_coins_added: i32,
+    /// Coins paid out of the claim treasury because the stall inventory lacked them
+    pub treasury_coins_removed: i32,
+    pub timestamp: Timestamp,
 }
 
 #[event_table(name = player_notification_event)]
